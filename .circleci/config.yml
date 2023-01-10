@@ -22,9 +22,9 @@ jobs:
       - run:
           name: Lint, Build, and Test
           command: |
-            npm lint
-            npm build
-            npm test --runInBand --ci --reporters=default --reporters=jest-junit
+            npm run lint
+            npm run build
+            npm run test 
       - run:
           name: Report Test Coverage
           environment:
@@ -51,7 +51,7 @@ jobs:
           at: ./
       - run:
           name: publish
-          command: npm publish --access restricted --new-version $CIRCLE_TAG
+          command: npm run publish --access restricted --new-version $CIRCLE_TAG
 
 workflows:
   test-only:

@@ -1,32 +1,16 @@
 {
-  "name": "@foxden/saml-node",
+  "name": "@foxden/node-saml",
   "version": "5.1.0",
   "description": "Foxden node saml implementation",
   "keywords": [
-    "saml",
-    "adfs",
-    "sso",
-    "shibboleth"
+    "saml"
   ],
   "repository": {
     "type": "git",
     "url": "https://github.com/Foxquilt/foxden-node-saml.git"
   },
-  "license": "MIT",
-  "author": {
-    "name": "Henri Bergius",
-    "email": "henri.bergius@iki.fi",
-    "url": "http://bergie.iki.fi"
-  },
-  "contributors": [
-    "Michael Bosworth",
-    "Herbert Vojčík",
-    "Peter Loer",
-    "Mark Stosberg",
-    "Chris Barth",
-    "Andrii Kostenko",
-    "Andreas Zoellner"
-  ],
+  "license": "UNLICENSED",
+  "author": "foxquilt",
   "main": "./lib",
   "files": [
     "lib",
@@ -34,11 +18,12 @@
     "LICENSE"
   ],
   "scripts": {
-    "build": "tsc",
+    "build": "rm -rf dist/ && tsc",
     "changelog": "gren changelog --override --generate --head master",
-    "lint": "eslint --ext .ts \"**/*.ts\" --cache && npm run prettier-check",
     "lint-watch": "onchange -k -p 100 \"**/*.ts\" -- eslint {{file}}",
-    "lint:fix": "eslint --ext .ts --fix src && npm run prettier-format",
+    "lint": "eslint --cache --ext .js,.ts,.tsx, ./src ./test",
+    "lint:fix": "eslint --cache --fix --ext .js,.ts,.tsx, ./src",
+    "format": "prettier --write \"**/*.(ts|json|md)\"",
     "prepare": "tsc",
     "prettier-check": "prettier --config .prettierrc.json --check .",
     "prettier-format": "prettier --config .prettierrc.json --write .",
@@ -64,7 +49,8 @@
     "xml-encryption": "^3.1.0",
     "xml2js": "^0.6.2",
     "xmlbuilder": "^15.1.1",
-    "xpath": "^0.0.34"
+    "xpath": "^0.0.34",
+    "yarn": "^1.22.19"
   },
   "devDependencies": {
     "@cjbarth/github-release-notes": "^4.3.0",

@@ -3,14 +3,30 @@
   "version": "5.1.0",
   "description": "Foxden node saml implementation",
   "keywords": [
-    "saml"
+    "saml",
+    "adfs",
+    "sso",
+    "shibboleth"
   ],
   "repository": {
     "type": "git",
     "url": "https://github.com/Foxquilt/foxden-node-saml.git"
   },
-  "license": "UNLICENSED",
-  "author": "foxquilt",
+  "license": "MIT",
+  "author": {
+    "name": "Henri Bergius",
+    "email": "henri.bergius@iki.fi",
+    "url": "http://bergie.iki.fi"
+  },
+  "contributors": [
+    "Michael Bosworth",
+    "Herbert Vojčík",
+    "Peter Loer",
+    "Mark Stosberg",
+    "Chris Barth",
+    "Andrii Kostenko",
+    "Andreas Zoellner"
+  ],
   "main": "./lib",
   "files": [
     "lib",
@@ -20,7 +36,7 @@
   "scripts": {
     "build": "tsc",
     "changelog": "gren changelog --override --generate --head master",
-    "lint": "eslint --ext .ts \"**/*.ts\" --cache ",
+    "lint": "eslint --ext .ts \"**/*.ts\" --cache && npm run prettier-check",
     "lint-watch": "onchange -k -p 100 \"**/*.ts\" -- eslint {{file}}",
     "lint:fix": "eslint --ext .ts --fix src && npm run prettier-format",
     "prepare": "tsc",

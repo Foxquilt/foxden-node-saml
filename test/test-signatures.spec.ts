@@ -157,16 +157,16 @@ describe("Signatures", function () {
     //   testOneResponse(
     //     "/invalid/response.root-signed.assertion-signed.xml",
     //     INVALID_DOCUMENT_SIGNATURE,
-    //     1
-    //   )
+    //     1,
+    //   ),
     // );
     // it(
     //   "R1A - root signed => error",
     //   testOneResponse(
     //     "/invalid/response.root-signed.assertion-unsigned.xml",
     //     INVALID_DOCUMENT_SIGNATURE,
-    //     1
-    //   )
+    //     1,
+    //   ),
     // );
     it(
       "R1A - assertion signed => error",
@@ -196,8 +196,8 @@ describe("Signatures", function () {
     //   testOneResponse(
     //     "/invalid/response.root-signed.assertion-invalidly-signed.xml",
     //     INVALID_DOCUMENT_SIGNATURE,
-    //     1
-    //   )
+    //     1,
+    //   ),
     // );
     // it(
     //   "R1A - root signed - assertion invalidly signed encrypted wantAssertionsSigned=true => error",
@@ -207,8 +207,8 @@ describe("Signatures", function () {
     //     2,
     //     {
     //       decryptionPvk: fs.readFileSync(__dirname + "/static/testshib encryption pvk.pem"),
-    //     }
-    //   )
+    //     },
+    //   ),
     // );
     it(
       "R1A - root signed but with too many transforms => early error",
@@ -310,16 +310,16 @@ describe("Signatures", function () {
     //   testOneResponse(
     //     "/invalid/response.root-signed.assertion-signed.1advice-signed.xml",
     //     INVALID_DOCUMENT_SIGNATURE,
-    //     1
-    //   )
+    //     1,
+    //   ),
     // );
     // it(
     //   "R1A1Ad - signed root + assertion => error",
     //   testOneResponse(
     //     "/invalid/response.root-signed.assertion-signed.1advice-unsigned.xml",
     //     INVALID_DOCUMENT_SIGNATURE,
-    //     1
-    //   )
+    //     1,
+    //   ),
     // );
     // it(
     //   "R1A1Ad - signed assertion + advice => error",
@@ -327,16 +327,16 @@ describe("Signatures", function () {
     //     "/invalid/response.root-unsigned.assertion-signed.1advice-signed.xml",
     //     INVALID_SIGNATURE,
     //     2,
-    //     { wantAuthnResponseSigned: false }
-    //   )
+    //     { wantAuthnResponseSigned: false },
+    //   ),
     // );
     // it(
     //   "R1A1Ad - signed root => error",
     //   testOneResponse(
     //     "/invalid/response.root-signed.assertion-unsigned.1advice-unsigned.xml",
     //     INVALID_DOCUMENT_SIGNATURE,
-    //     1
-    //   )
+    //     1,
+    //   ),
     // );
     // it(
     //   "R1A1Ad - signed assertion => error",
@@ -344,8 +344,8 @@ describe("Signatures", function () {
     //     "/invalid/response.root-unsigned.assertion-signed.1advice-unsigned.xml",
     //     INVALID_SIGNATURE,
     //     2,
-    //     { wantAuthnResponseSigned: false }
-    //   )
+    //     { wantAuthnResponseSigned: false },
+    //   ),
     // );
   });
 
@@ -397,24 +397,24 @@ describe("Signatures", function () {
     //   testOneResponse(
     //     "/invalid/response.root-signed.assertion-signed.2advice-signed.xml",
     //     INVALID_DOCUMENT_SIGNATURE,
-    //     1
-    //   )
+    //     1,
+    //   ),
     // );
     // it(
     //   "R1A2Ad - signed root + assertion => error",
     //   testOneResponse(
     //     "/invalid/response.root-signed.assertion-signed.2advice-unsigned.xml",
     //     INVALID_DOCUMENT_SIGNATURE,
-    //     1
-    //   )
+    //     1,
+    //   ),
     // );
     // it(
     //   "R1A2Ad - signed root => error",
     //   testOneResponse(
     //     "/invalid/response.root-signed.assertion-unsigned.2advice-unsigned.xml",
     //     INVALID_DOCUMENT_SIGNATURE,
-    //     1
-    //   )
+    //     1,
+    //   ),
     // );
   });
 

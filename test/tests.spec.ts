@@ -1026,7 +1026,7 @@ describe("node-saml /", function () {
       //         const samlConfig: SamlConfig = {
       //           callbackUrl: "http://localhost/saml/consume",
       //           entryPoint: "https://app.onelogin.com/trust/saml2/http-post/sso/371755",
-      //           cert: TEST_CERT,
+      //           idpCert: TEST_CERT,
       //           validateInResponseTo,
       //           issuer: "onesaml_login",
       //           wantAuthnResponseSigned: false,

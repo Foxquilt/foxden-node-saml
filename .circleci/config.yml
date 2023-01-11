@@ -43,7 +43,7 @@ jobs:
           at: ./
       - run:
           name: publish
-          command: npm publish --access public --new-version $CIRCLE_TAG
+          command: npm publish
 
 workflows:
   test-only:

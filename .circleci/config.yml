@@ -22,17 +22,9 @@ jobs:
       - run:
           name: Lint, Build, and Test
           command: |
-            npm run lint
+            npm run lint:fix
             npm run build
-            npm run test 
-      - run:
-          name: Report Test Coverage
-          environment:
-            COVERALLS_SERVICE_NAME: 'circleci'
-          command: |
-            export COVERALLS_GIT_BRANCH=$CIRCLE_BRANCH
-            export COVERALLS_SERVICE_JOB_ID=$CIRCLE_BUILD_NUM
-            npx coveralls < coverage/lcov.info
+            npm run test
       - store_test_results:
           path: ./reports/
       - store_artifacts:
@@ -51,7 +43,7 @@ jobs:
           at: ./
       - run:
           name: publish
-          command: npm publish --access public --new-version $CIRCLE_TAG
+          command: npm publish
 
 workflows:
   test-only:

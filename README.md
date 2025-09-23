@@ -10,9 +10,35 @@
 
 This is a [SAML 2.0](http://en.wikipedia.org/wiki/SAML_2.0) authentication provider for Node.js. -->
 
+## Sponsors
+
+We gratefully acknowledge support from our sponsors:
+
+<div align="center">
+  <a href="https://stytch.com">
+    <picture>
+      <source width="200px" media="(prefers-color-scheme: dark)" srcset="./sponsor/stytch-light.svg">
+      <source width="200px" media="(prefers-color-scheme: light)" srcset="./sponsor/stytch-dark.svg">
+      <img width="200px" src="./sponsor/stytch-dark.svg" />
+    </picture>
+  </a>
+   <p align="center">
+      <a href="https://stytch.com/?utm_source=oss-sponsorship&utm_medium=paid_sponsorship&utm_campaign=nodesaml">
+        <b>The identity platform for humans & AI agents</b><br/>
+        One integration for authentication, authorization, and security
+      </a>
+   </p>
+</div>
+
+- [RideAmigos](https://rideamigos.com/)
+
+If your company benefits from node-saml being secure and up-to-date, consider asking them to sponsor the project at $25/month. See the [Github Sponsors page](https://github.com/sponsors/cjbarth) for more sponsorship levels. It's easy to do, appearing as another line-item on the Github bill they already have.
+
 ## Installation
 
-    $ npm install @node-saml/node-saml
+```shell
+npm install @node-saml/node-saml
+```
 
 <!-- ## Usage
 
@@ -29,20 +55,18 @@ const options = {};
 const saml = new SAML(options);
 ```
 
-#### Config parameter details:
+#### Config parameter details
 
 - **Core**
-- `callbackUrl`: full callbackUrl (overrides path/protocol if supplied)
-- `path`: path to callback; will be combined with protocol and server host information to construct callback url if `callbackUrl` is not specified (default: `/saml/consume`)
-- `protocol`: protocol for callback; will be combined with path and server host information to construct callback url if `callbackUrl` is not specified (default: `http://`)
-- `host`: host for callback; will be combined with path and protocol to construct callback url if `callbackUrl` is not specified (default: `localhost`)
+- `callbackUrl`: full callbackUrl
 - `entryPoint`: identity provider entrypoint (is required to be spec-compliant when the request is signed)
 - `issuer`: issuer string to supply to identity provider
 - `audience`: expected saml response Audience, defaults to value of Issuer (if `false`, Audience won't be verified)
-- `cert`: the IDP's public signing certificate used to validate the signatures of the incoming SAML Responses, see [Security and signatures](#security-and-signatures)
+- `idpCert`: the IDP's public signing certificate used to validate the signatures of the incoming SAML Responses, see [Security and signatures](#security-and-signatures)
 - `privateKey`: see [Security and signatures](#security-and-signatures).
+- `publicCert`: the service provider's public signing certificate used to embed in AuthnRequest in order for the IDP to validate the signatures of the incoming SAML Request, see [Security and signatures](#security-and-signatures)
 - `decryptionPvk`: optional private key that will be used to attempt to decrypt any encrypted assertions that are received
-- `signatureAlgorithm`: optionally set the signature algorithm for signing requests, valid values are 'sha1' (default), 'sha256', or 'sha512'
+- `signatureAlgorithm`: valid values are 'sha1', 'sha256', or 'sha512'
 - `digestAlgorithm`: optionally set the digest algorithm used to provide a digest for the signed data object, valid values are 'sha1' (default), 'sha256', or 'sha512'
 - `xmlSignatureTransforms`: optionally set an array of signature transforms to be used in HTTP-POST signatures. By default this is `[ 'http://www.w3.org/2000/09/xmldsig#enveloped-signature', 'http://www.w3.org/2001/10/xml-exc-c14n#' ]`
 - **Additional SAML behaviors**
@@ -92,7 +116,7 @@ const saml = new SAML(options);
 - **InResponseTo Validation**
 - `validateInResponseTo`:
   - if `"always"`, then InResponseTo will be validated from incoming SAML responses
-  - if `"never"`, then InResponseTo won't be validated
+  - if `"never"`(default), then InResponseTo won't be validated.
   - if `"ifPresent"`, then InResponseTo will only be validated if present in the incoming SAML response
 - `requestIdExpirationPeriodMs`: Defines the expiration time when a Request ID generated for a SAML request will not be valid if seen in a SAML response in the `InResponseTo` field. Default is 8 hours.
 - `cacheProvider`: Defines the implementation for a cache provider used to store request Ids generated in SAML requests as part of `InResponseTo` validation. Default is a built-in in-memory cache provider. For details see the 'Cache Provider' section.
@@ -116,7 +140,7 @@ const saml = new SAML(options);
 samlAuthnRequestExtensions: {
   "md:RequestedAttribute": {
     "@isRequired": "true",
-    "@Name": "Lastname",
+    "@Name": "LastName",
     "@xmlns:md": "urn:oasis:names:tc:SAML:2.0:metadata"
   },
   vetuma: {
@@ -157,85 +181,151 @@ metadataContactPerson:  [{
 // ContactPerson is an array because there can be multiple ContactPerson fields
 ```
 
-### generateServiceProviderMetadata( decryptionCert, signingCert )
+### generateServiceProviderMetadata( decryptionCert, publicCert )
 
-As a convenience, the strategy object exposes a `generateServiceProviderMetadata` method which will generate a service provider metadata document suitable for supplying to an identity provider. This method will only work on strategies which are configured with a `callbackUrl` (since the relative path for the callback is not sufficient information to generate a complete metadata document).
+As a convenience, the strategy object exposes a `generateServiceProviderMetadata` method which will generate a service provider metadata document suitable for supplying to an identity provider.
 
 The `decryptionCert` argument should be a public certificate matching the `decryptionPvk` and is required if the strategy is configured with a `decryptionPvk`.
 
-The `signingCert` argument should be a public certificate matching the `privateKey` and is required if the strategy is configured with a `privateKey`. An array of certificates can be provided to support certificate rotation. When supplying an array of certificates, the first entry in the array should match the current `privateKey`. Additional entries in the array can be used to publish upcoming certificates to IdPs before changing the `privateKey`.
+The `publicCert` argument should be a public certificate matching the `privateKey` and is required if the strategy is configured with a `privateKey`. An array of certificates can be provided to support certificate rotation. When supplying an array of certificates, the first entry in the array should match the current `privateKey`. Additional entries in the array can be used to publish upcoming certificates to IdPs before changing the `privateKey`.
+
+### generateServiceProviderMetadata( params )
+
+The underlying `generateServiceProviderMetadata` function is also exported directly. This is useful if you want to generate metadata without creating a strategy object.
+
+```js
+const { generateServiceProviderMetadata } = require("@node-saml/node-saml");
+
+const metadata = generateServiceProviderMetadata({
+  issuer: "https://example.com",
+  callbackUrl: "https://example.com/callback",
+});
+```
 
 ## Security and signatures
 
 Node-SAML uses the HTTP Redirect Binding for its `AuthnRequest`s (unless overridden with the `authnRequestBinding` parameter), and expects to receive the messages back via the HTTP POST binding.
 
+### Configuration option `signatureAlgorithm`
+
 Authentication requests sent by Node-SAML can be signed using RSA signature with SHA1, SHA256 or SHA512 hashing algorithms.
 
 To select hashing algorithm, use:
 
-```js
-...
-  signatureAlgorithm: 'sha1' // (default, but not recommended anymore these days)
-  signatureAlgorithm: 'sha256', // (preferred - your IDP should support it, otherwise think about upgrading it)
-  signatureAlgorithm: 'sha512' // (most secure - check if your IDP supports it)
-...
+```javascript
+signatureAlgorithm: 'sha1' // (default, but not recommended anymore these days)
+signatureAlgorithm: 'sha256', // (preferred - your IDP should support it, otherwise think about upgrading it)
+signatureAlgorithm: 'sha512' // (most secure - check if your IDP supports it)
 ```
 
-To sign them you need to provide a private key in the PEM format via the `privateKey` configuration key.
+### Configuration option `privateKey`
 
-Formats supported for `privateKey` field are,
-
-1. Well formatted PEM:
-
-```
------BEGIN PRIVATE KEY-----
-<private key contents here delimited at 64 characters per row>
------END PRIVATE KEY-----
-
-```
-
-```
------BEGIN RSA PRIVATE KEY-----
-<private key contents here delimited at 64 characters per row>
------END RSA PRIVATE KEY-----
-
-```
-
-(both versions work)
-See example from tests of the first version of [well formatted private key](test/static/acme_tools_com.key).
-
-2. Alternatively a single line private key without start/end lines where all rows are joined into single line:
-
-See example from tests of [singleline private key](test/static/singleline_acme_tools_com.key).
+To sign authentication requests, private key needs to be provide in the PEM format via the `privateKey` configuration property.
+Node-SAML is enforcing [RFC7468](https://www.rfc-editor.org/rfc/rfc7468) `stricttextualmsg` format for PEM files.
 
 Add it to strategy options like this:
 
 ```javascript
-privateKey: fs.readFileSync("./privateKey.pem", "utf-8");
+privateKey: fs.readFileSync("./privateKey.pem", "latin1");
 ```
 
-It is a good idea to validate the signatures of the incoming SAML Responses. For this, you can provide the Identity Provider's public PEM-encoded X.509 signing certificate using the `cert` configuration key. The "BEGIN CERTIFICATE" and "END CERTIFICATE" lines should be stripped out and the certificate should be provided on a single line.
+Example formats for `privateKey` field are,
+
+1. RFC7468 `stricttextualmsg` formatted PEM:
+
+```text
+-----BEGIN PRIVATE KEY-----
+<private key contents here delimited at 64 characters per row>
+-----END PRIVATE KEY-----
+```
+
+or
+
+```text
+-----BEGIN RSA PRIVATE KEY-----
+<private key contents here delimited at 64 characters per row>
+-----END RSA PRIVATE KEY-----
+```
+
+2. Alternatively, a single-line or multi-line private key in Base64 format.
+   See example from tests of [single line private key](test/static/single_line_acme_tools_com.key).
+
+### Configuration option `idpCert`
+
+It is important to validate the signatures of the incoming SAML Responses.
+For this, provide the Identity Provider's public X.509 signing certificate(s) or public key(s) in [RFC7468](https://www.rfc-editor.org/rfc/rfc7468) `stricttextualmsg` PEM format
+via the `idpCert` configuration property.
+
+> **Important**, provided public key MUST always be in PEM format!
+
+Add it to options like this:
 
 ```javascript
-cert: "MIICizCCAfQCCQCY8tKaMc0BMjANBgkqh ... W==";
+idpCert: "MIICizCCAfQCCQCY8tKaMc0BMjANBgkqh ... W==";
 ```
 
-If you have a certificate in the binary DER encoding, you can convert it to the necessary PEM encoding like this:
+or
 
-```bash
-     openssl x509 -inform der -in my_certificate.cer -out my_certificate.pem
-```
-
-If the Identity Provider has multiple signing certificates that are valid (such as during the rolling from an old key to a new key and responses signed with either key are valid) then the `cert` configuration key can be an array:
+If the Identity Provider has multiple signing certificates or public keys that are valid then the `idpCert` configuration property can be an array.
+This can be the case during the rolling from an old key to a new key and responses signed with either key are valid:
 
 ```javascript
-cert: ["MIICizCCAfQCCQCY8tKaMc0BMjANBgkqh ... W==", "MIIEOTCCAyGgAwIBAgIJAKZgJdKdCdL6M ... g="];
+idpCert: ["MIICizCCAfQCCQCY8tKaMc0BMjANBgkqh ... W==", "MIIEOTCCAyGgAwIBAgIJAKZgJdKdCdL6M ... g="];
 ```
 
-The `cert` configuration key can also be a function that receives a callback as argument calls back a possible error and a certificate or array of certificates. This allows the Identity Provider to be polled for valid certificates and the new certificate can be used if it is changed:
+or
+
+The `idpCert` configuration property can also be a function that receives a callback as argument calls back a possible error and a certificate or array of certificates
+or a public key or array of public keys.
+This allows the Identity Provider to be polled for valid certificates or public keys and the new certificate or public key can be used if it is changed:
 
 ```javascript
-    cert: function(callback) { callback(null,polledCertificates); }
+idpCert: (callback) => {
+  callback(null, polledCertificates);
+};
+```
+
+Example formats for `idpCert` field are,
+
+1. RFC7468 stricttextualmsg formatted PEM:
+
+```text
+-----BEGIN CERTIFICATE-----
+<certificate contents here delimited at 64 characters per row>
+-----END CERTIFICATE-----
+```
+
+or
+
+```text
+-----BEGIN PUBLIC KEY-----
+<public key contents here delimited at 64 characters per row>
+-----END PUBLIC KEY-----
+```
+
+2. Alternatively, a single-line or multi-line **certificate** in Base64 format.
+
+### TIP: If the certificate is in the binary DER encoding
+
+Convert it to the necessary PEM encoding like this:
+
+```shell
+openssl x509 -inform der -in my_certificate.cer -out my_certificate.pem
+```
+
+Some identity providers require that the public signing certificate be embedded in AuthnRequest in order for the IDP to verify the request as well as match the subject DN and confirm if the certificate was signed. This can be achieved by passing service provider's public signing certificate in PEM format via the `publicCert` configuration key. The `publicCert` should be a public certificate matching the privateKey.
+
+```
+-----BEGIN CERTIFICATE-----
+<X.509 certificate contents here delimited at 64 characters per row>
+-----END CERTIFICATE-----
+
+```
+
+Alternativelly a single line X.509 certificate without start/end lines where all rows are joined into single line can be passed:
+
+```javascript
+publicCert: "MIICizCCAfQCCQCY8tKaMc0BMjANBgkqh ... W==";
 ```
 
 ## SAML Response Validation - NotBefore and NotOnOrAfter

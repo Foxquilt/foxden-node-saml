@@ -8,14 +8,15 @@ import { SamlConfig } from "../src/types";
 import * as assert from "assert";
 
 describe("SAML request", function () {
-  it("Config with Extensions", async function () {
+  describe("Config with Extensions", function () {
     const config: SamlConfig = {
+      callbackUrl: "http://localhost/saml/consume",
       entryPoint: "https://wwwexampleIdp.com/saml",
-      cert: FAKE_CERT,
+      idpCert: FAKE_CERT,
       samlAuthnRequestExtensions: {
         "md:RequestedAttribute": {
           "@isRequired": "true",
-          "@Name": "Lastname",
+          "@Name": "LastName",
           "@xmlns:md": "urn:oasis:names:tc:SAML:2.0:metadata",
         },
         vetuma: {
@@ -49,7 +50,7 @@ describe("SAML request", function () {
               {
                 $: {
                   isRequired: "true",
-                  Name: "Lastname",
+                  Name: "LastName",
                   "xmlns:md": "urn:oasis:names:tc:SAML:2.0:metadata",
                 },
               },
@@ -86,30 +87,55 @@ describe("SAML request", function () {
     };
 
     const oSAML = new SAML(config);
-    return oSAML
-      .getAuthorizeFormAsync("http://localhost/saml/consume")
-      .then((formBody) => {
-        expect(formBody).to.match(/<!DOCTYPE html>[^]*<input.*name="SAMLRequest"[^]*<\/html>/);
-        const samlRequestMatchValues = formBody.match(/<input.*name="SAMLRequest" value="([^"]*)"/);
-        assertRequired(samlRequestMatchValues?.[1]);
-        const encodedSamlRequest = samlRequestMatchValues?.[1];
 
-        let buffer = Buffer.from(encodedSamlRequest, "base64");
-        buffer = zlib.inflateRawSync(buffer);
+    it("getAuthorizeMessageAsync", async function () {
+      return oSAML
+        .getAuthorizeMessageAsync("http://localhost/saml/consume")
+        .then((samlMessage) => {
+          assertRequired(samlMessage.SAMLRequest);
+          const encodedSamlRequest = samlMessage.SAMLRequest as string;
 
-        return parseStringPromise(buffer.toString());
-      })
-      .then((doc) => {
-        delete doc["samlp:AuthnRequest"]["$"]["ID"];
-        delete doc["samlp:AuthnRequest"]["$"]["IssueInstant"];
-        expect(doc).to.deep.equal(result);
-      });
+          const decoded = Buffer.from(encodedSamlRequest, "base64");
+          const inflated = zlib.inflateRawSync(decoded);
+
+          return parseStringPromise(inflated.toString("utf8"));
+        })
+        .then((doc) => {
+          delete doc["samlp:AuthnRequest"]["$"]["ID"];
+          delete doc["samlp:AuthnRequest"]["$"]["IssueInstant"];
+          expect(doc).to.deep.equal(result);
+        });
+    });
+
+    it("getAuthorizeFormAsync", async function () {
+      return oSAML
+        .getAuthorizeFormAsync("http://localhost/saml/consume")
+        .then((formBody) => {
+          expect(formBody).to.match(/<!DOCTYPE html>[^]*<input.*name="SAMLRequest"[^]*<\/html>/);
+          const samlRequestMatchValues = formBody.match(
+            /<input.*name="SAMLRequest" value="([^"]*)"/,
+          );
+          assertRequired(samlRequestMatchValues?.[1]);
+          const encodedSamlRequest = samlRequestMatchValues?.[1];
+
+          const decoded = Buffer.from(encodedSamlRequest, "base64");
+          const inflated = zlib.inflateRawSync(decoded);
+
+          return parseStringPromise(inflated.toString("utf8"));
+        })
+        .then((doc) => {
+          delete doc["samlp:AuthnRequest"]["$"]["ID"];
+          delete doc["samlp:AuthnRequest"]["$"]["IssueInstant"];
+          expect(doc).to.deep.equal(result);
+        });
+    });
   });
 
-  it("AllowCreate defaults to true", async function () {
+  describe("AllowCreate defaults to true", function () {
     const config: SamlConfig = {
+      callbackUrl: "http://localhost/saml/consume",
       entryPoint: "https://wwwexampleIdp.com/saml",
-      cert: FAKE_CERT,
+      idpCert: FAKE_CERT,
       issuer: "onelogin_saml",
     };
 
@@ -149,30 +175,55 @@ describe("SAML request", function () {
     };
 
     const oSAML = new SAML(config);
-    return oSAML
-      .getAuthorizeFormAsync("http://localhost/saml/consume")
-      .then((formBody) => {
-        expect(formBody).to.match(/<!DOCTYPE html>[^]*<input.*name="SAMLRequest"[^]*<\/html>/);
-        const samlRequestMatchValues = formBody.match(/<input.*name="SAMLRequest" value="([^"]*)"/);
-        assertRequired(samlRequestMatchValues?.[1]);
-        const encodedSamlRequest = samlRequestMatchValues?.[1];
 
-        let buffer = Buffer.from(encodedSamlRequest, "base64");
-        buffer = zlib.inflateRawSync(buffer);
+    it("getAuthorizeMessageAsync", async function () {
+      return oSAML
+        .getAuthorizeMessageAsync("http://localhost/saml/consume")
+        .then((samlMessage) => {
+          assertRequired(samlMessage.SAMLRequest);
+          const encodedSamlRequest = samlMessage.SAMLRequest as string;
 
-        return parseStringPromise(buffer.toString());
-      })
-      .then((doc) => {
-        delete doc["samlp:AuthnRequest"]["$"]["ID"];
-        delete doc["samlp:AuthnRequest"]["$"]["IssueInstant"];
-        expect(doc).to.deep.equal(result);
-      });
+          const decoded = Buffer.from(encodedSamlRequest, "base64");
+          const inflated = zlib.inflateRawSync(decoded);
+
+          return parseStringPromise(inflated.toString("utf8"));
+        })
+        .then((doc) => {
+          delete doc["samlp:AuthnRequest"]["$"]["ID"];
+          delete doc["samlp:AuthnRequest"]["$"]["IssueInstant"];
+          expect(doc).to.deep.equal(result);
+        });
+    });
+
+    it("getAuthorizeFormAsync", async function () {
+      return oSAML
+        .getAuthorizeFormAsync("http://localhost/saml/consume")
+        .then((formBody) => {
+          expect(formBody).to.match(/<!DOCTYPE html>[^]*<input.*name="SAMLRequest"[^]*<\/html>/);
+          const samlRequestMatchValues = formBody.match(
+            /<input.*name="SAMLRequest" value="([^"]*)"/,
+          );
+          assertRequired(samlRequestMatchValues?.[1]);
+          const encodedSamlRequest = samlRequestMatchValues?.[1];
+
+          const decoded = Buffer.from(encodedSamlRequest, "base64");
+          const inflated = zlib.inflateRawSync(decoded);
+
+          return parseStringPromise(inflated.toString("utf8"));
+        })
+        .then((doc) => {
+          delete doc["samlp:AuthnRequest"]["$"]["ID"];
+          delete doc["samlp:AuthnRequest"]["$"]["IssueInstant"];
+          expect(doc).to.deep.equal(result);
+        });
+    });
   });
 
-  it("Config with NameIDPolicy options", async function () {
+  describe("Config with NameIDPolicy options", function () {
     const config: SamlConfig = {
+      callbackUrl: "http://localhost/saml/consume",
       entryPoint: "https://wwwexampleIdp.com/saml",
-      cert: FAKE_CERT,
+      idpCert: FAKE_CERT,
       issuer: "onelogin_saml",
       identifierFormat: "urn:oasis:names:tc:SAML:2.0:nameid-format:persistent",
       allowCreate: false,
@@ -216,30 +267,55 @@ describe("SAML request", function () {
     };
 
     const oSAML = new SAML(config);
-    return oSAML
-      .getAuthorizeFormAsync("http://localhost/saml/consume")
-      .then((formBody) => {
-        expect(formBody).to.match(/<!DOCTYPE html>[^]*<input.*name="SAMLRequest"[^]*<\/html>/);
-        const samlRequestMatchValues = formBody.match(/<input.*name="SAMLRequest" value="([^"]*)"/);
-        assertRequired(samlRequestMatchValues?.[1]);
-        const encodedSamlRequest = samlRequestMatchValues?.[1];
 
-        let buffer = Buffer.from(encodedSamlRequest, "base64");
-        buffer = zlib.inflateRawSync(buffer);
+    it("getAuthorizeMessageAsync", async function () {
+      return oSAML
+        .getAuthorizeMessageAsync("http://localhost/saml/consume")
+        .then((samlMessage) => {
+          assertRequired(samlMessage.SAMLRequest);
+          const encodedSamlRequest = samlMessage.SAMLRequest as string;
 
-        return parseStringPromise(buffer.toString());
-      })
-      .then((doc) => {
-        delete doc["samlp:AuthnRequest"]["$"]["ID"];
-        delete doc["samlp:AuthnRequest"]["$"]["IssueInstant"];
-        expect(doc).to.deep.equal(result);
-      });
+          const decoded = Buffer.from(encodedSamlRequest, "base64");
+          const inflated = zlib.inflateRawSync(decoded);
+
+          return parseStringPromise(inflated.toString("utf8"));
+        })
+        .then((doc) => {
+          delete doc["samlp:AuthnRequest"]["$"]["ID"];
+          delete doc["samlp:AuthnRequest"]["$"]["IssueInstant"];
+          expect(doc).to.deep.equal(result);
+        });
+    });
+
+    it("getAuthorizeFormAsync", async function () {
+      return oSAML
+        .getAuthorizeFormAsync("http://localhost/saml/consume")
+        .then((formBody) => {
+          expect(formBody).to.match(/<!DOCTYPE html>[^]*<input.*name="SAMLRequest"[^]*<\/html>/);
+          const samlRequestMatchValues = formBody.match(
+            /<input.*name="SAMLRequest" value="([^"]*)"/,
+          );
+          assertRequired(samlRequestMatchValues?.[1]);
+          const encodedSamlRequest = samlRequestMatchValues?.[1];
+
+          const decoded = Buffer.from(encodedSamlRequest, "base64");
+          const inflated = zlib.inflateRawSync(decoded);
+
+          return parseStringPromise(inflated.toString("utf8"));
+        })
+        .then((doc) => {
+          delete doc["samlp:AuthnRequest"]["$"]["ID"];
+          delete doc["samlp:AuthnRequest"]["$"]["IssueInstant"];
+          expect(doc).to.deep.equal(result);
+        });
+    });
   });
 
-  it("Config with forceAuthn and passive", async function () {
+  describe("Config with forceAuthn and passive", function () {
     const config: SamlConfig = {
+      callbackUrl: "http://localhost/saml/consume",
       entryPoint: "https://wwwexampleIdp.com/saml",
-      cert: FAKE_CERT,
+      idpCert: FAKE_CERT,
       issuer: "onelogin_saml",
       forceAuthn: true,
       passive: true,
@@ -283,30 +359,99 @@ describe("SAML request", function () {
     };
 
     const oSAML = new SAML(config);
-    return oSAML
-      .getAuthorizeFormAsync("http://localhost/saml/consume")
-      .then((formBody) => {
-        expect(formBody).to.match(/<!DOCTYPE html>[^]*<input.*name="SAMLRequest"[^]*<\/html>/);
-        const samlRequestMatchValues = formBody.match(/<input.*name="SAMLRequest" value="([^"]*)"/);
-        assertRequired(samlRequestMatchValues?.[1]);
-        const encodedSamlRequest = samlRequestMatchValues?.[1];
 
-        let buffer = Buffer.from(encodedSamlRequest, "base64");
-        buffer = zlib.inflateRawSync(buffer);
+    it("getAuthorizeMessageAsync", async function () {
+      return oSAML
+        .getAuthorizeMessageAsync("http://localhost/saml/consume")
+        .then((samlMessage) => {
+          assertRequired(samlMessage.SAMLRequest);
+          const encodedSamlRequest = samlMessage.SAMLRequest as string;
 
-        return parseStringPromise(buffer.toString());
-      })
-      .then((doc) => {
-        delete doc["samlp:AuthnRequest"]["$"]["ID"];
-        delete doc["samlp:AuthnRequest"]["$"]["IssueInstant"];
-        expect(doc).to.deep.equal(result);
-      });
+          const decoded = Buffer.from(encodedSamlRequest, "base64");
+          const inflated = zlib.inflateRawSync(decoded);
+
+          return parseStringPromise(inflated.toString("utf8"));
+        })
+        .then((doc) => {
+          delete doc["samlp:AuthnRequest"]["$"]["ID"];
+          delete doc["samlp:AuthnRequest"]["$"]["IssueInstant"];
+          expect(doc).to.deep.equal(result);
+        });
+    });
+
+    it("getAuthorizeFormAsync", async function () {
+      return oSAML
+        .getAuthorizeFormAsync("http://localhost/saml/consume")
+        .then((formBody) => {
+          expect(formBody).to.match(/<!DOCTYPE html>[^]*<input.*name="SAMLRequest"[^]*<\/html>/);
+          const samlRequestMatchValues = formBody.match(
+            /<input.*name="SAMLRequest" value="([^"]*)"/,
+          );
+          assertRequired(samlRequestMatchValues?.[1]);
+          const encodedSamlRequest = samlRequestMatchValues?.[1];
+
+          const decoded = Buffer.from(encodedSamlRequest, "base64");
+          const inflated = zlib.inflateRawSync(decoded);
+
+          return parseStringPromise(inflated.toString("utf8"));
+        })
+        .then((doc) => {
+          delete doc["samlp:AuthnRequest"]["$"]["ID"];
+          delete doc["samlp:AuthnRequest"]["$"]["IssueInstant"];
+          expect(doc).to.deep.equal(result);
+        });
+    });
   });
 
-  it("Config with disableRequestedAuthnContext, skipRequestCompression, disableRequestAcsUrl", async function () {
+  describe("With additional run-time parameters", function () {
     const config: SamlConfig = {
+      callbackUrl: "http://localhost/saml/consume",
       entryPoint: "https://wwwexampleIdp.com/saml",
-      cert: FAKE_CERT,
+      idpCert: FAKE_CERT,
+      issuer: "onelogin_saml",
+    };
+
+    const oSAML = new SAML(config);
+
+    it("getAuthorizeMessageAsync", async function () {
+      const samlMessage = await oSAML.getAuthorizeMessageAsync(
+        "http://localhost/saml/consume",
+        undefined,
+        { additionalParams: { foo: "bar" } },
+      );
+
+      assertRequired(samlMessage.SAMLRequest);
+      expect(samlMessage.foo).to.equal("bar");
+    });
+
+    it("getAuthorizeFormAsync", async function () {
+      const formBody = await oSAML.getAuthorizeFormAsync(
+        "http://localhost/saml/consume",
+        undefined,
+        { additionalParams: { foo: "bar" } },
+      );
+
+      expect(formBody).to.match(/<!DOCTYPE html>[^]*<input.*name="SAMLRequest"[^]*<\/html>/);
+      expect(formBody).to.match(/<input.*name="foo" value="bar"/);
+    });
+
+    it("getAuthorizeFormAsync with empty options", async function () {
+      const formBody = await oSAML.getAuthorizeFormAsync(
+        "http://localhost/saml/consume",
+        undefined,
+        {},
+      );
+
+      expect(formBody).to.match(/<!DOCTYPE html>[^]*<input.*name="SAMLRequest"[^]*<\/html>/);
+      expect(formBody).to.not.match(/<input.*name="foo" value="bar"/);
+    });
+  });
+
+  describe("Config with disableRequestedAuthnContext, skipRequestCompression, disableRequestAcsUrl", function () {
+    const config: SamlConfig = {
+      callbackUrl: "http://localhost/saml/consume",
+      entryPoint: "https://wwwexampleIdp.com/saml",
+      idpCert: FAKE_CERT,
       issuer: "onelogin_saml",
       disableRequestedAuthnContext: true,
       skipRequestCompression: true,
@@ -337,35 +482,67 @@ describe("SAML request", function () {
     };
 
     const oSAML = new SAML(config);
-    return oSAML
-      .getAuthorizeFormAsync("http://localhost/saml/consume")
-      .then((formBody) => {
-        expect(formBody).to.match(/<!DOCTYPE html>[^]*<input.*name="SAMLRequest"[^]*<\/html>/);
-        const samlRequestMatchValues = formBody.match(/<input.*name="SAMLRequest" value="([^"]*)"/);
-        assertRequired(samlRequestMatchValues?.[1]);
-        const encodedSamlRequest = samlRequestMatchValues?.[1];
-        const buffer = Buffer.from(encodedSamlRequest, "base64");
 
-        return parseStringPromise(buffer.toString());
-      })
-      .then((doc) => {
-        delete doc["samlp:AuthnRequest"]["$"]["ID"];
-        delete doc["samlp:AuthnRequest"]["$"]["IssueInstant"];
-        expect(doc).to.deep.equal(result);
-      });
+    it("getAuthorizeMessageAsync", async function () {
+      return oSAML
+        .getAuthorizeMessageAsync("http://localhost/saml/consume")
+        .then((samlMessage) => {
+          assertRequired(samlMessage.SAMLRequest);
+          const encodedSamlRequest = samlMessage.SAMLRequest as string;
+          const buffer = Buffer.from(encodedSamlRequest, "base64");
+
+          return parseStringPromise(buffer.toString("utf8"));
+        })
+        .then((doc) => {
+          delete doc["samlp:AuthnRequest"]["$"]["ID"];
+          delete doc["samlp:AuthnRequest"]["$"]["IssueInstant"];
+          expect(doc).to.deep.equal(result);
+        });
+    });
+
+    it("getAuthorizeFormAsync", async function () {
+      return oSAML
+        .getAuthorizeFormAsync("http://localhost/saml/consume")
+        .then((formBody) => {
+          expect(formBody).to.match(/<!DOCTYPE html>[^]*<input.*name="SAMLRequest"[^]*<\/html>/);
+          const samlRequestMatchValues = formBody.match(
+            /<input.*name="SAMLRequest" value="([^"]*)"/,
+          );
+          assertRequired(samlRequestMatchValues?.[1]);
+          const encodedSamlRequest = samlRequestMatchValues?.[1];
+          const buffer = Buffer.from(encodedSamlRequest, "base64");
+
+          return parseStringPromise(buffer.toString("utf8"));
+        })
+        .then((doc) => {
+          delete doc["samlp:AuthnRequest"]["$"]["ID"];
+          delete doc["samlp:AuthnRequest"]["$"]["IssueInstant"];
+          expect(doc).to.deep.equal(result);
+        });
+    });
   });
 
-  it("should throw error when samlAuthnRequestExtensions is not a object", async function () {
+  describe("should throw error when samlAuthnRequestExtensions is not a object", function () {
     const config: SamlConfig = {
+      callbackUrl: "http://localhost/saml/consume",
       entryPoint: "https://wwwexampleIdp.com/saml",
-      cert: FAKE_CERT,
-      samlAuthnRequestExtensions: "anyvalue" as unknown as Record<string, unknown>,
+      idpCert: FAKE_CERT,
+      samlAuthnRequestExtensions: "anyValue" as unknown as Record<string, unknown>,
       issuer: "onesaml_login",
     };
 
     const oSAML = new SAML(config);
-    await assert.rejects(oSAML.getAuthorizeFormAsync("http://localhost/saml/consume"), {
-      message: "samlAuthnRequestExtensions should be Object",
+
+    it("getAuthorizeMessageAsync", async function () {
+      await assert.rejects(oSAML.getAuthorizeMessageAsync("http://localhost/saml/consume"), {
+        message: "samlAuthnRequestExtensions should be Object",
+      });
+    });
+
+    it("getAuthorizeFormAsync", async function () {
+      await assert.rejects(oSAML.getAuthorizeFormAsync("http://localhost/saml/consume"), {
+        message: "samlAuthnRequestExtensions should be Object",
+      });
     });
   });
 });

@@ -1,4 +1,4 @@
-import { removeCertPEMHeaderAndFooter } from "./crypto";
+import { stripPemHeaderAndFooter } from "./crypto";
 import {
   isValidSamlSigningOptions,
   ServiceMetadataXML,
@@ -7,29 +7,32 @@ import {
 } from "./types";
 import { assertRequired, signXmlMetadata } from "./utility";
 import { buildXmlBuilderObject } from "./xml";
+import { generateUniqueId as generateUniqueIdDefault } from "./crypto";
+import { DEFAULT_IDENTIFIER_FORMAT, DEFAULT_WANT_ASSERTIONS_SIGNED } from "./constants";
 
 export const generateServiceProviderMetadata = (
-  params: GenerateServiceProviderMetadataParams
+  params: GenerateServiceProviderMetadataParams,
 ): string => {
   const {
     issuer,
     callbackUrl,
     logoutCallbackUrl,
-    identifierFormat,
-    wantAssertionsSigned,
     decryptionPvk,
     privateKey,
     metadataContactPerson,
     metadataOrganization,
-    generateUniqueId,
+    identifierFormat = DEFAULT_IDENTIFIER_FORMAT,
+    wantAssertionsSigned = DEFAULT_WANT_ASSERTIONS_SIGNED,
+    // This matches the default used in the `SAML` class.
+    generateUniqueId = generateUniqueIdDefault,
   } = params;
 
-  let { signingCerts, decryptionCert } = params;
+  let { publicCerts, decryptionCert } = params;
 
   if (decryptionPvk != null) {
     if (!decryptionCert) {
       throw new Error(
-        "Missing decryptionCert while generating metadata for decrypting service provider"
+        "Missing decryptionCert while generating metadata for decrypting service provider",
       );
     }
   } else {
@@ -37,14 +40,14 @@ export const generateServiceProviderMetadata = (
   }
 
   if (privateKey != null) {
-    if (!signingCerts) {
+    if (!publicCerts) {
       throw new Error(
-        "Missing signingCert while generating metadata for signing service provider messages"
+        "Missing publicCert while generating metadata for signing service provider messages",
       );
     }
-    signingCerts = !Array.isArray(signingCerts) ? [signingCerts] : signingCerts;
+    publicCerts = !Array.isArray(publicCerts) ? [publicCerts] : publicCerts;
   } else {
-    signingCerts = null;
+    publicCerts = null;
   }
 
   const metadata: ServiceMetadataXML = {
@@ -57,28 +60,28 @@ export const generateServiceProviderMetadata = (
         "@protocolSupportEnumeration": "urn:oasis:names:tc:SAML:2.0:protocol",
         "@AuthnRequestsSigned": "false",
       },
-      ...(metadataContactPerson ? { ContactPerson: metadataContactPerson } : {}),
       ...(metadataOrganization ? { Organization: metadataOrganization } : {}),
+      ...(metadataContactPerson ? { ContactPerson: metadataContactPerson } : {}),
     },
   };
 
-  if (decryptionCert != null || signingCerts != null) {
+  if (decryptionCert != null || publicCerts != null) {
     metadata.EntityDescriptor.SPSSODescriptor.KeyDescriptor = [];
     if (isValidSamlSigningOptions(params)) {
       assertRequired(
-        signingCerts,
-        "Missing signingCert while generating metadata for signing service provider messages"
+        publicCerts,
+        "Missing publicCert while generating metadata for signing service provider messages",
       );
 
       metadata.EntityDescriptor.SPSSODescriptor["@AuthnRequestsSigned"] = true;
 
-      const certArray = Array.isArray(signingCerts) ? signingCerts : [signingCerts];
+      const certArray = Array.isArray(publicCerts) ? publicCerts : [publicCerts];
       const signingKeyDescriptors = certArray.map((cert) => ({
         "@use": "signing",
         "ds:KeyInfo": {
           "ds:X509Data": {
             "ds:X509Certificate": {
-              "#text": removeCertPEMHeaderAndFooter(cert),
+              "#text": stripPemHeaderAndFooter(cert),
             },
           },
         },
@@ -89,10 +92,10 @@ export const generateServiceProviderMetadata = (
     if (decryptionPvk != null) {
       assertRequired(
         decryptionCert,
-        "Missing decryptionCert while generating metadata for decrypting service provider"
+        "Missing decryptionCert while generating metadata for decrypting service provider",
       );
 
-      decryptionCert = removeCertPEMHeaderAndFooter(decryptionCert);
+      decryptionCert = stripPemHeaderAndFooter(decryptionCert);
 
       metadata.EntityDescriptor.SPSSODescriptor.KeyDescriptor.push({
         "@use": "encryption",

@@ -1,14 +1,22 @@
 export type SignatureAlgorithm = "sha1" | "sha256" | "sha512";
 
+export type PemLabel = "CERTIFICATE" | "PUBLIC KEY" | "PRIVATE KEY";
+
 export interface SamlSigningOptions {
   privateKey: string | Buffer;
+  publicCert?: string;
   signatureAlgorithm?: SignatureAlgorithm;
   xmlSignatureTransforms?: string[];
   digestAlgorithm?: string;
 }
 
+export interface AuthOptions {
+  samlFallback?: "login-request" | "logout-request";
+  additionalParams?: Record<string, string | string[]>;
+}
+
 export const isValidSamlSigningOptions = (
-  options: Partial<SamlSigningOptions>
+  options: Partial<SamlSigningOptions>,
 ): options is SamlSigningOptions => {
   return options.privateKey != null;
 };
@@ -35,6 +43,7 @@ export type XMLObject = {
 
 export type XMLInput = XMLObject;
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type XMLOutput = Record<string, any>;
 
 export type AuthorizeRequestXML = {
@@ -62,20 +71,21 @@ export type SamlAssertionXmlJs = {
 
 export type SamlStatusXmlJs = {
   Status: [
-    { StatusCode: [XmlJsObject & { StatusCode: [XmlJsObject] }]; StatusMessage: [XmlJsObject] }
+    { StatusCode: [XmlJsObject & { StatusCode: [XmlJsObject] }]; StatusMessage: [XmlJsObject] },
   ];
 };
 
-export type CertCallback = (
-  callback: (err: Error | null, cert?: string | string[]) => void
+export type IdpCertCallback = (
+  callback: (err: Error | null, publicCert?: string | string[]) => void,
 ) => void;
 
 /**
  * These are SAML options that must be provided to construct a new SAML Strategy
  */
 export interface MandatorySamlOptions {
-  cert: string | string[] | CertCallback;
+  idpCert: string | string[] | IdpCertCallback;
   issuer: string;
+  callbackUrl: string;
 }
 
 export interface SamlIDPListConfig {
@@ -113,9 +123,9 @@ export interface XmlSignatureLocation {
   action: "append" | "prepend" | "before" | "after";
 }
 
-export type RacComparision = "exact" | "minimum" | "maximum" | "better";
+export type RacComparison = "exact" | "minimum" | "maximum" | "better";
 
-interface SamlScopingConfig {
+export interface SamlScopingConfig {
   idpList?: SamlIDPListConfig[];
   proxyCount?: number;
   requesterId?: string[] | string;
@@ -133,10 +143,6 @@ export enum ValidateInResponseTo {
  */
 export interface SamlOptions extends Partial<SamlSigningOptions>, MandatorySamlOptions {
   // Core
-  callbackUrl?: string;
-  path: string;
-  protocol?: string;
-  host: string;
   entryPoint?: string;
   decryptionPvk?: string | Buffer;
 
@@ -153,7 +159,7 @@ export interface SamlOptions extends Partial<SamlSigningOptions>, MandatorySamlO
   forceAuthn: boolean;
   skipRequestCompression: boolean;
   authnRequestBinding?: string;
-  racComparison: RacComparision;
+  racComparison: RacComparison;
   providerName?: string;
   passive: boolean;
   idpIssuer?: string;
@@ -206,12 +212,12 @@ export interface SamlOptions extends Partial<SamlSigningOptions>, MandatorySamlO
 
 export interface GenerateServiceProviderMetadataParams {
   decryptionCert?: string | null;
-  signingCerts?: string | string[] | null;
+  publicCerts?: string | string[] | null;
   issuer: SamlOptions["issuer"];
   callbackUrl: SamlOptions["callbackUrl"];
   logoutCallbackUrl?: SamlOptions["logoutCallbackUrl"];
   identifierFormat?: SamlOptions["identifierFormat"];
-  wantAssertionsSigned: SamlOptions["wantAssertionsSigned"];
+  wantAssertionsSigned?: SamlOptions["wantAssertionsSigned"];
   decryptionPvk?: SamlOptions["decryptionPvk"];
   privateKey?: SamlOptions["privateKey"];
   signatureAlgorithm?: SamlOptions["signatureAlgorithm"];
@@ -220,18 +226,10 @@ export interface GenerateServiceProviderMetadataParams {
   signMetadata?: SamlOptions["signMetadata"];
   metadataContactPerson?: SamlOptions["metadataContactPerson"];
   metadataOrganization?: SamlOptions["metadataOrganization"];
-  generateUniqueId: SamlOptions["generateUniqueId"];
+  generateUniqueId?: SamlOptions["generateUniqueId"];
 }
 
-export interface StrategyOptions {
-  name?: string;
-  passReqToCallback?: boolean;
-}
-
-/**
- * These options are availble for configuring a SAML strategy
- */
-export type SamlConfig = Partial<SamlOptions> & StrategyOptions & MandatorySamlOptions;
+export type SamlConfig = Partial<SamlOptions> & MandatorySamlOptions;
 
 export interface Profile {
   issuer: string;
@@ -250,8 +248,11 @@ export interface Profile {
   [attributeName: string]: unknown; // arbitrary `AttributeValue`s
 }
 
-export class ErrorWithXmlStatus extends Error {
-  constructor(message: string, public readonly xmlStatus: string) {
+export class SamlStatusError extends Error {
+  constructor(
+    message: string,
+    public readonly xmlStatus: string,
+  ) {
     super(message);
   }
 }

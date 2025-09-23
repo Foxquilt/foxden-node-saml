@@ -146,6 +146,11 @@ export interface SamlOptions extends Partial<SamlSigningOptions>, MandatorySamlO
   entryPoint?: string;
   decryptionPvk?: string | Buffer;
 
+  // Legacy
+  path: string;
+  protocol?: string;
+  host: string;
+
   // Additional SAML behaviors
   additionalParams: Record<string, string>;
   additionalAuthorizeParams: Record<string, string>;
@@ -229,7 +234,15 @@ export interface GenerateServiceProviderMetadataParams {
   generateUniqueId?: SamlOptions["generateUniqueId"];
 }
 
-export type SamlConfig = Partial<SamlOptions> & MandatorySamlOptions;
+export interface StrategyOptions {
+  name?: string;
+  passReqToCallback?: boolean;
+}
+
+/**
+ * These options are availble for configuring a SAML strategy
+ */
+export type SamlConfig = Partial<SamlOptions> & StrategyOptions & MandatorySamlOptions;
 
 export interface Profile {
   issuer: string;

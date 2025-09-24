@@ -147,9 +147,9 @@ export interface SamlOptions extends Partial<SamlSigningOptions>, MandatorySamlO
   decryptionPvk?: string | Buffer;
 
   // Legacy
-  path: string;
+  path?: string;
   protocol?: string;
-  host: string;
+  host?: string;
 
   // Additional SAML behaviors
   additionalParams: Record<string, string>;

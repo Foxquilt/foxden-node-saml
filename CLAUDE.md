@@ -46,7 +46,7 @@ src/                  # TypeScript source (compiled to lib/)
   metadata.ts         # SP metadata generation
   saml-post-signing.ts  # HTTP-POST binding request signing
   utility.ts          # Assertion helpers
-lib/                  # Compiled output (committed; do not edit)
+lib/                  # Compiled output (git-ignored, built by `prepare`/`build`; do not edit)
 test/                 # Mocha test specs (.spec.ts files)
   samlTests.spec.ts
   samlRequest.spec.ts
@@ -56,6 +56,7 @@ test/                 # Mocha test specs (.spec.ts files)
   crypto.spec.ts
   cache.spec.ts
   test-signatures.spec.ts
+  types.ts            # Shared test fixtures/certs (e.g. TEST_CERT_SINGLELINE, TEST_CERT_MULTILINE)
   static/             # Test certificates, XML fixtures
 ```
 
@@ -68,8 +69,8 @@ From `src/index.ts`:
 
 ## Architecture Notes
 
-- Compiled output goes to `lib/` (set as `"main"` in package.json) — the `lib/` directory is committed and published, not generated at install time by consumers.
-- `prepare` script runs `tsc`, so `lib/` is rebuilt on `yarn install` in dependent projects.
+- Compiled output goes to `lib/` (set as `"main"` in package.json). `lib/` is git-ignored (not committed) — it's built by the `prepare` script (`tsc`) before publish and shipped to consumers only via the npm tarball (`files` includes `lib`, `README.md`, `LICENSE`).
+- `prepare` runs `tsc` automatically on `npm publish` and on `npm install` when this package is pulled in as a git dependency, so `lib/` doesn't need to be pre-built for those cases.
 - TypeScript target is `es2018`, module format is `commonjs`.
 - The `CacheProvider` interface must be implemented by consumers to handle `InResponseTo` replay prevention. A default `InMemoryCacheProvider` is included but not suitable for multi-instance deployments.
 - XML signature validation uses `xml-crypto`; encryption uses `xml-encryption`; parsing uses `@xmldom/xmldom` + `xml2js`.

@@ -76,6 +76,11 @@ From `src/index.ts`:
 - XML signature validation uses `xml-crypto`; encryption uses `xml-encryption`; parsing uses `@xmldom/xmldom` + `xml2js`.
 - Test framework is **Mocha + Chai + Sinon** (not Jest) with nyc for coverage.
 
+## CI
+
+- `engines.node` is `>= 22`. CircleCI (`.circleci/config.yml`) runs `npm run lint:fix`, `build` and `test` on Node 22 for every push, and publishes with `npm publish` only on tags matching `<major>.<minor>.<patch>`.
+- `.github/workflows/workflow.yml` also runs `npm ci` + `npm test` (plus an `npm update` re-run and Codecov upload) on pushes/PRs to master; its matrix still lists Node 14.x/16.x/18.x alongside 22.x, which is older than `engines`. `codeql-analysis.yml` runs CodeQL.
+
 ## Versioning
 
 Current version is `5.1.1`. The `CHANGELOG.md` is generated via `yarn changelog` (uses `gren`). Releases are managed with `release-it`.
